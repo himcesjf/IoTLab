@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Telemetrix Dashboard{% endblock %}</title>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.3/dist/cdn.min.js"></script>
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.3/dist/chart.umd.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer components {
+            .btn {
+                @apply px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2;
+            }
+            .btn-primary {
+                @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+            }
+            .btn-secondary {
+                @apply bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-500;
+            }
+            .card {
+                @apply bg-white shadow-md rounded-lg p-4;
+            }
+            .card-header {
+                @apply text-lg font-semibold text-gray-800 mb-4;
+            }
+            .nav-link {
+                @apply px-3 py-2 text-sm font-medium rounded-md;
+            }
+            .nav-link-active {
+                @apply bg-primary-100 text-primary-700;
+            }
+            .nav-link-inactive {
+                @apply text-gray-600 hover:bg-gray-100 hover:text-gray-800;
+            }
+            .badge {
+                @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+            }
+            .badge-success {
+                @apply bg-green-100 text-green-800;
+            }
+            .badge-error {
+                @apply bg-red-100 text-red-800;
+            }
+            .badge-warning {
+                @apply bg-yellow-100 text-yellow-800;
+            }
+            .badge-info {
+                @apply bg-blue-100 text-blue-800;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen bg-gray-50">
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar -->
+        <div class="hidden md:flex md:flex-shrink-0">
+            <div class="flex flex-col w-64">
+                <div class="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto bg-primary-700">
+                    <div class="flex items-center flex-shrink-0 px-4">
+                        <span class="text-xl font-bold text-white">Telemetrix Lab</span>
+                    </div>
+                    <div class="mt-5 flex-grow flex flex-col">
+                        <nav class="flex-1 px-2 space-y-1">
+                            <a href="{% url 'dashboard:index' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-primary-800">
+                                <svg class="mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                                Dashboard
+                            </a>
+                            <a href="{% url 'dashboard:device_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-primary-800">
+                                <svg class="mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                                </svg>
+                                Devices
+                            </a>
+                            <a href="{% url 'dashboard:anomaly_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-primary-800">
+                                <svg class="mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                Anomalies
+                            </a>
+                            <a href="{% url 'dashboard:metrics' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-primary-800">
+                                <svg class="mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                Metrics
+                            </a>
+                            <div class="pt-8">
+                                <a href="/admin/" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-primary-800">
+                                    <svg class="mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    Admin
+                                </a>
+                                <a href="/api/docs/" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white hover:bg-primary-800">
+                                    <svg class="mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                    </svg>
+                                    API Docs
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <div class="flex flex-col flex-1 overflow-hidden">
+            <!-- Top bar -->
+            <div class="relative z-10 flex-shrink-0 flex h-16 bg-white shadow">
+                <div class="flex-1 px-4 flex justify-between">
+                    <div class="flex-1 flex items-center">
+                        <button type="button" class="md:hidden px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+                            <span class="sr-only">Open sidebar</span>
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                        <h1 class="text-xl font-semibold text-gray-900 ml-2">{% block page_title %}Dashboard{% endblock %}</h1>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main content area -->
+            <main class="flex-1 relative overflow-y-auto focus:outline-none">
+                <div class="py-6">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 
