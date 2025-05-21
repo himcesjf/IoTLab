@@ -30,8 +30,8 @@ class Device(models.Model):
     """Model representing individual IoT devices."""
     
     STATUS_CHOICES = [
-        ('active', _('Active')),
-        ('inactive', _('Inactive')),
+        ('online', _('Online')),
+        ('offline', _('Offline')),
         ('maintenance', _('Maintenance')),
         ('error', _('Error')),
     ]
@@ -47,7 +47,7 @@ class Device(models.Model):
         _("Status"), 
         max_length=20, 
         choices=STATUS_CHOICES,
-        default='active'
+        default='offline'
     )
     location = models.CharField(_("Location"), max_length=100, blank=True)
     metadata = models.JSONField(_("Metadata"), default=dict, blank=True)
