@@ -15,7 +15,7 @@ psycopg2-binary==2.9.9
 django-timescaledb==0.2.13
 
 # MQTT
-paho-mqtt==2.2.1
+paho-mqtt==2.1.0
 
 # API
 graphene-django==3.1.5
@@ -35,7 +35,8 @@ flake8==6.1.0
 prometheus-client==0.18.0
 
 # Utilities
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 faker==22.4.0
 numpy==1.26.3
-pandas==2.1.4 
+pandas==2.1.4
+coreapi==2.3.3 

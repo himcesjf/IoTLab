@@ -1,3 +1,7 @@
+# Environment variables
+.env
+.env.*
+
 # Python
 __pycache__/
 *.py[cod]
@@ -20,6 +24,17 @@ wheels/
 .installed.cfg
 *.egg
 
+# Virtual Environment
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
 # Django
 *.log
 local_settings.py
@@ -28,23 +43,9 @@ db.sqlite3-journal
 media/
 staticfiles/
 
-# Virtual Environment
-venv/
-env/
-ENV/
-.env
-.venv
-env.bak/
-venv.bak/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-*.sublime-workspace
-*.sublime-project
+# Project specific
+*.pid
+*.sock
 
 # Docker
 .docker/
@@ -79,11 +80,6 @@ coverage.xml
 
 # Jupyter Notebook
 .ipynb_checkpoints
-
-# Environment variables
-.env
-.env.local
-.env.*.local
 
 # Distribution / packaging
 .Python
