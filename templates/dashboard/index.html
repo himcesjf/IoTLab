@@ -1,0 +1,116 @@
+{% extends "dashboard/base.html" %}
+{% load device_tags %}
+
+{% block title %}Telemetrix Dashboard{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_head %}
+<style>
+.progress-bar {
+    width: var(--progress-width);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto">
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Device Status -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">Device Status</h3>
+            <div class="flex justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Online</p>
+                    <p class="text-2xl font-bold text-green-600">{{ active_devices }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">Not Online</p>
+                    <p class="text-2xl font-bold text-red-600">{{ inactive_devices }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anomaly Summary -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">24h Anomalies</h3>
+            <div class="flex justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">Total</p>
+                    <p class="text-2xl font-bold">{{ anomaly_count }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">Critical</p>
+                    <p class="text-2xl font-bold text-red-600">{{ critical_anomalies }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Telemetry Count -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">24h Telemetry</h3>
+            <p class="text-2xl font-bold">{{ telemetry_count }}</p>
+            <p class="text-sm text-gray-600">Data Points</p>
+        </div>
+
+        <!-- Device Types -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-2">Device Types</h3>
+            <div class="space-y-2">
+                {% for type in device_types %}
+                <div class="flex justify-between">
+                    <span class="text-gray-600">{{ type.name }}</span>
+                    <span class="font-semibold">{{ type.device_count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Status Distribution -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Status Distribution -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">Device Status Distribution</h3>
+            <div class="space-y-4">
+                {% for status in status_counts %}
+                <div class="flex items-center">
+                    <span class="w-24 text-gray-600">{{ status.status|title }}</span>
+                    <div class="flex-1 mx-4 bg-gray-200 rounded-full h-4">
+                        {% with total=devices_total %}
+                        <div class="bg-blue-600 h-4 rounded-full progress-bar" style="--progress-width: {{ status.count|percentage:total }}%"></div>
+                        {% endwith %}
+                    </div>
+                    <span class="w-12 text-right font-semibold">{{ status.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Anomalies -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">Recent Anomalies</h3>
+            <div class="space-y-4">
+                {% for anomaly in recent_anomalies %}
+                <div class="flex items-center justify-between border-b pb-2">
+                    <div>
+                        <p class="font-medium">{{ anomaly.device.name }}</p>
+                        <p class="text-sm text-gray-600">{{ anomaly.message }}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="px-2 py-1 text-sm rounded-full 
+                            {% if anomaly.severity == 'critical' %}bg-red-100 text-red-800
+                            {% elif anomaly.severity == 'warning' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ anomaly.severity|title }}
+                        </span>
+                        <p class="text-sm text-gray-500 mt-1">{{ anomaly.timestamp|timesince }} ago</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

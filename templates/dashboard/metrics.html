@@ -1,0 +1,231 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Metrics - IoT Lab{% endblock %}
+
+{% block page_title %}Metrics{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initCharts();
+    });
+
+    function initCharts() {
+        try {
+            // Daily Telemetry Chart
+            const telemetryData = JSON.parse('{{ daily_counts|safe }}' || '[]');
+            if (telemetryData.length > 0) {
+                new Chart(document.getElementById('telemetryChart'), {
+                    type: 'line',
+                    data: {
+                        labels: telemetryData.map(d => d.date),
+                        datasets: [{
+                            label: 'Telemetry Count',
+                            data: telemetryData.map(d => d.count),
+                            borderColor: '#0ea5e9',
+                            backgroundColor: '#0ea5e9',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Daily Telemetry Count'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Anomaly Severity Chart
+            const severityData = JSON.parse('{{ severity_counts|safe }}' || '[]');
+            if (severityData.length > 0 && severityData[0].data.length > 0) {
+                new Chart(document.getElementById('anomalyChart'), {
+                    type: 'line',
+                    data: {
+                        labels: severityData[0].data.map(d => d.date),
+                        datasets: severityData.map(severity => ({
+                            label: severity.severity.charAt(0).toUpperCase() + severity.severity.slice(1),
+                            data: severity.data.map(d => d.count),
+                            borderColor: severity.severity === 'critical' ? '#ef4444' :
+                                       severity.severity === 'high' ? '#f97316' :
+                                       severity.severity === 'medium' ? '#eab308' :
+                                       '#3b82f6',
+                            backgroundColor: severity.severity === 'critical' ? '#ef4444' :
+                                           severity.severity === 'high' ? '#f97316' :
+                                           severity.severity === 'medium' ? '#eab308' :
+                                           '#3b82f6',
+                            tension: 0.1
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Daily Anomalies by Severity'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                stacked: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Device Distribution Charts
+            const deviceCountData = JSON.parse('{{ device_counts|safe }}' || '[]');
+            if (deviceCountData.length > 0) {
+                new Chart(document.getElementById('deviceTypeChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: deviceCountData.map(d => d.name),
+                        datasets: [{
+                            data: deviceCountData.map(d => d.count),
+                            backgroundColor: [
+                                '#0ea5e9',
+                                '#6366f1',
+                                '#8b5cf6',
+                                '#ec4899'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Device Type Distribution'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Device Status Chart
+            const statusCountData = JSON.parse('{{ status_counts|safe }}' || '[]');
+            if (statusCountData.length > 0) {
+                new Chart(document.getElementById('deviceStatusChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: statusCountData.map(d => d.status.charAt(0).toUpperCase() + d.status.slice(1)),
+                        datasets: [{
+                            data: statusCountData.map(d => d.count),
+                            backgroundColor: [
+                                '#22c55e',  // Online - Green
+                                '#ef4444',  // Offline - Red
+                                '#eab308',  // Maintenance - Yellow
+                                '#ef4444'   // Error - Red
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Device Status Distribution'
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error initializing charts:', error);
+        }
+    }
+</script>
+<style>
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <!-- Time Range Selector -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <form method="get" class="flex items-center space-x-4">
+            <div>
+                <label for="days" class="block text-sm font-medium text-gray-700">Time Range</label>
+                <select name="days" id="days" class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" onchange="this.form.submit()">
+                    <option value="1" {% if days == 1 %}selected{% endif %}>Last 24 Hours</option>
+                    <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 Days</option>
+                    <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 Days</option>
+                    <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 Days</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Telemetry Chart -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="chart-container">
+                <canvas id="telemetryChart"></canvas>
+                {% if not daily_counts or daily_counts == '[]' %}
+                <div class="absolute inset-0 flex items-center justify-center text-gray-500">
+                    No telemetry data available
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Anomaly Chart -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="chart-container">
+                <canvas id="anomalyChart"></canvas>
+                {% if not severity_counts or severity_counts == '[]' %}
+                <div class="absolute inset-0 flex items-center justify-center text-gray-500">
+                    No anomaly data available
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Device Type Distribution -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="chart-container">
+                <canvas id="deviceTypeChart"></canvas>
+                {% if not device_counts or device_counts == '[]' %}
+                <div class="absolute inset-0 flex items-center justify-center text-gray-500">
+                    No device type data available
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Device Status Distribution -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="chart-container">
+                <canvas id="deviceStatusChart"></canvas>
+                {% if not status_counts or status_counts == '[]' %}
+                <div class="absolute inset-0 flex items-center justify-center text-gray-500">
+                    No device status data available
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

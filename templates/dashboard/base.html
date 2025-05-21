@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Telemetrix Dashboard{% endblock %}</title>
+    <title>{% block title %}IoT Lab Dashboard{% endblock %}</title>
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.3/dist/cdn.min.js"></script>
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.5"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -77,6 +78,9 @@
             .badge-info {
                 @apply bg-blue-100 text-blue-800;
             }
+            .chart-container {
+                @apply relative min-h-[300px] w-full;
+            }
         }
     </style>
     
@@ -89,7 +93,7 @@
             <div class="flex flex-col w-64">
                 <div class="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto bg-primary-700">
                     <div class="flex items-center flex-shrink-0 px-4">
-                        <span class="text-xl font-bold text-white">Telemetrix Lab</span>
+                        <span class="text-xl font-bold text-white">IoT Lab</span>
                     </div>
                     <div class="mt-5 flex-grow flex flex-col">
                         <nav class="flex-1 px-2 space-y-1">

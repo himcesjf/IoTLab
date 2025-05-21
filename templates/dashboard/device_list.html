@@ -1,0 +1,105 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Devices - IoT Telemetry{% endblock %}
+
+{% block page_title %}Devices{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h3 class="text-lg font-semibold mb-4">Filters</h3>
+        <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="type" class="block text-sm font-medium text-gray-700">Device Type</label>
+                <select name="type" id="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                    <option value="">All Types</option>
+                    {% for type in device_types %}
+                    <option value="{{ type.name }}" {% if active_filters.type == type.name %}selected{% endif %}>
+                        {{ type.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                <select name="status" id="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                    <option value="">All Statuses</option>
+                    {% for status in status_choices %}
+                    <option value="{{ status }}" {% if active_filters.status == status %}selected{% endif %}>
+                        {{ status|title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+                <select name="location" id="location" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                    <option value="">All Locations</option>
+                    {% for location in locations %}
+                    <option value="{{ location }}" {% if active_filters.location == location %}selected{% endif %}>
+                        {{ location }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="md:col-span-3 flex justify-end space-x-4">
+                <a href="{% url 'dashboard:device_list' %}" class="btn btn-secondary">Clear</a>
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Device List -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold">Devices</h3>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for device in devices %}
+            <div class="p-6 hover:bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-900">
+                            <a href="{% url 'dashboard:device_detail' device.id %}" class="hover:text-primary-600">
+                                {{ device.name }}
+                            </a>
+                        </h4>
+                        <p class="text-sm text-gray-500">{{ device.device_type.name }}</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">Location</p>
+                            <p class="text-sm font-medium">{{ device.metadata.location|default:"Unknown" }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">Last Seen</p>
+                            <p class="text-sm font-medium">
+                                {% if device.last_seen %}
+                                {{ device.last_seen|timesince }} ago
+                                {% else %}
+                                Never
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            <span class="px-2 py-1 text-sm rounded-full
+                                {% if device.status == 'online' %}bg-green-100 text-green-800
+                                {% elif device.status == 'offline' %}bg-red-100 text-red-800
+                                {% elif device.status == 'maintenance' %}bg-yellow-100 text-yellow-800
+                                {% elif device.status == 'error' %}bg-red-100 text-red-800{% endif %}">
+                                {{ device.status|title }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-6 text-center text-gray-500">
+                No devices found matching the selected filters.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
