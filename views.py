@@ -1,6 +1,6 @@
 import json
 from datetime import timedelta
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse, StreamingHttpResponse
 from django.utils import timezone
 from django.db.models import Count, Avg, Max
@@ -8,6 +8,89 @@ from django.contrib.auth.decorators import login_required
 
 from telemetrix_lab.ingest_api.devices.models import Device, DeviceType
 from telemetrix_lab.ingest_api.telemetry.models import Telemetry, AnomalyDetection
+
+
+def index(request):
+    return render(request, 'index.html')
+
+
+def device_list(request):
+    """View for listing all devices with filtering options."""
+    # Get query parameters for filtering
+    device_type = request.GET.get('type')
+    status = request.GET.get('status')
+    location = request.GET.get('location')
+    
+    # Build the queryset with filters
+    devices = Device.objects.select_related('device_type').all()
+    
+    if device_type:
+        devices = devices.filter(device_type__name=device_type)
+    if status:
+        devices = devices.filter(status=status)
+    if location:
+        # Filter location from metadata
+        devices = devices.filter(metadata__location=location)
+    
+    # Order by last_seen
+    devices = devices.order_by('-last_seen')
+    
+    # Get unique filter options for the UI
+    device_types = DeviceType.objects.all()
+    status_choices = [choice[0] for choice in Device.STATUS_CHOICES]
+    # Get unique locations from metadata
+    locations = Device.objects.values_list('metadata__location', flat=True).distinct()
+    
+    context = {
+        'devices': devices,
+        'device_types': device_types,
+        'status_choices': status_choices,
+        'locations': locations,
+        'active_filters': {
+            'type': device_type,
+            'status': status,
+            'location': location,
+        }
+    }
+    
+    return render(request, 'dashboard/device_list.html', context)
+
+
+def device_detail(request, device_id):
+    device = Device.objects.get(id=device_id)
+    return render(request, 'devices/detail.html', {'device': device})
+
+
+def anomaly_list(request):
+    return render(request, 'anomalies/list.html')
+
+
+def telemetry_stream(request):
+    """
+    Server-Sent Events endpoint for streaming telemetry updates to the dashboard.
+    Used with EventSource in the browser.
+    """
+    def event_stream():
+        """Generator for SSE events."""
+        yield "data: connected\n\n"
+        
+        # This implementation uses Server-Sent Events (SSE) to stream real-time updates.
+        # In a production environment, this would be integrated with:
+        # 1. Django Channels for WebSocket support
+        # 2. Redis as a message broker
+        # 3. MQTT client for IoT device communication
+        # For now, we're sending a heartbeat every 30 seconds to maintain the connection.
+        while True:
+            # Wait for 30 seconds
+            yield "event: heartbeat\ndata: {}\n\n"
+            
+    response = StreamingHttpResponse(
+        event_stream(),
+        content_type='text/event-stream'
+    )
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'  # Disable Nginx buffering
+    return response
 
 
 def index(request):
@@ -27,18 +110,17 @@ def index(request):
         severity='critical'
     ).count()
     
-    # Calculate active vs inactive devices
-    active_devices = Device.objects.filter(
-        status='active'
-    ).count()
-    inactive_devices = Device.objects.exclude(
-        status='active'
-    ).count()
-    
-    # Get device status counts
+    # Calculate device status counts
+    devices_total = Device.objects.count()
     status_counts = Device.objects.values('status').annotate(
         count=Count('id')
     ).order_by('status')
+    
+    # Calculate online vs not online devices
+    active_devices = Device.objects.filter(
+        status='online'
+    ).count()
+    inactive_devices = devices_total - active_devices
     
     # Get recent telemetry count
     telemetry_count = Telemetry.objects.filter(
@@ -57,51 +139,12 @@ def index(request):
         'active_devices': active_devices,
         'inactive_devices': inactive_devices,
         'status_counts': status_counts,
+        'devices_total': devices_total,
         'telemetry_count': telemetry_count,
         'recent_anomalies': recent_anomalies,
     }
     
     return render(request, 'dashboard/index.html', context)
-
-
-def device_list(request):
-    """View for listing all devices with filtering options."""
-    # Get query parameters for filtering
-    device_type = request.GET.get('type')
-    status = request.GET.get('status')
-    location = request.GET.get('location')
-    
-    # Build the queryset with filters
-    devices = Device.objects.select_related('device_type').all()
-    
-    if device_type:
-        devices = devices.filter(device_type__name=device_type)
-    if status:
-        devices = devices.filter(status=status)
-    if location:
-        devices = devices.filter(location=location)
-    
-    # Order by last_seen
-    devices = devices.order_by('-last_seen')
-    
-    # Get unique filter options for the UI
-    device_types = DeviceType.objects.all()
-    status_choices = [choice[0] for choice in Device.STATUS_CHOICES]
-    locations = Device.objects.values_list('location', flat=True).distinct()
-    
-    context = {
-        'devices': devices,
-        'device_types': device_types,
-        'status_choices': status_choices,
-        'locations': locations,
-        'active_filters': {
-            'type': device_type,
-            'status': status,
-            'location': location,
-        }
-    }
-    
-    return render(request, 'dashboard/device_list.html', context)
 
 
 def device_detail(request, device_id):
@@ -238,7 +281,7 @@ def metrics_dashboard(request):
         })
     
     # Calculate daily anomaly counts by severity
-    severity_counts = []
+    severity_data = []
     for severity in ['low', 'medium', 'high', 'critical']:
         daily_data = []
         for day in range(days):
@@ -253,52 +296,38 @@ def metrics_dashboard(request):
                 'date': day_start.date().isoformat(),
                 'count': count
             })
-        severity_counts.append({
+        severity_data.append({
             'severity': severity,
             'data': daily_data
         })
     
-    # Get device counts by type
+    # Calculate device type distribution
     device_counts = DeviceType.objects.annotate(
         count=Count('devices')
     ).values('name', 'count')
     
-    # Get device counts by status
+    # Calculate device status distribution
     status_counts = Device.objects.values('status').annotate(
         count=Count('id')
-    ).values('status', 'count')
+    ).order_by('status')
     
     context = {
         'days': days,
         'daily_counts': json.dumps(daily_counts),
-        'severity_counts': json.dumps(severity_counts),
+        'severity_counts': json.dumps(severity_data),
         'device_counts': json.dumps(list(device_counts)),
-        'status_counts': json.dumps(list(status_counts)),
+        'status_counts': json.dumps(list(status_counts))
     }
     
     return render(request, 'dashboard/metrics.html', context)
 
 
-def telemetry_stream(request):
-    """
-    Server-Sent Events endpoint for streaming telemetry updates to the dashboard.
-    Used with EventSource in the browser.
-    """
-    def event_stream():
-        """Generator for SSE events."""
-        yield "data: connected\n\n"
-        
-        # In a real implementation, this would use a message queue or
-        # the Django Channels layer to get updates from the MQTT client.
-        # For this example, we'll just yield a "heartbeat" message.
-        while True:
-            # Wait for 30 seconds
-            yield "event: heartbeat\ndata: {}\n\n"
-            
-    response = StreamingHttpResponse(
-        event_stream(),
-        content_type='text/event-stream'
-    )
-    response['Cache-Control'] = 'no-cache'
-    response['X-Accel-Buffering'] = 'no'  # Disable Nginx buffering
-    return response 
+def acknowledge_anomaly(request, anomaly_id):
+    """Handle anomaly acknowledgment."""
+    if request.method == 'POST':
+        anomaly = get_object_or_404(AnomalyDetection, id=anomaly_id)
+        anomaly.acknowledged = True
+        anomaly.acknowledged_at = timezone.now()
+        anomaly.save()
+        return redirect('dashboard:anomaly_list')
+    return redirect('dashboard:anomaly_list') 
