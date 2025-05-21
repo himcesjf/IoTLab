@@ -43,40 +43,8 @@ services:
       - mosquitto_log:/mosquitto/log
     command: mosquitto -c /mosquitto/config/mosquitto.conf
 
-  prometheus:
-    image: prom/prometheus:v2.45.0
-    restart: always
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./config/prometheus:/etc/prometheus
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--web.enable-lifecycle'
-
-  grafana:
-    image: grafana/grafana:10.1.4
-    restart: always
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./config/grafana/provisioning:/etc/grafana/provisioning
-      - grafana_data:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
-    depends_on:
-      - prometheus
-
 volumes:
   postgres_data:
   redis_data:
   mosquitto_data:
-  mosquitto_log:
-  prometheus_data:
-  grafana_data: 
+  mosquitto_log: 
