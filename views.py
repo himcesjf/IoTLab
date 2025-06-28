@@ -10,10 +10,6 @@ from telemetrix_lab.ingest_api.devices.models import Device, DeviceType
 from telemetrix_lab.ingest_api.telemetry.models import Telemetry, AnomalyDetection
 
 
-def index(request):
-    return render(request, 'index.html')
-
-
 def device_list(request):
     """View for listing all devices with filtering options."""
     # Get query parameters for filtering
