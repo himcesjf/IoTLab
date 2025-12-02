@@ -7,7 +7,6 @@ router.register(r'device-types', views.DeviceTypeViewSet)
 router.register(r'devices', views.DeviceViewSet)
 router.register(r'telemetry', views.TelemetryViewSet)
 router.register(r'anomalies', views.AnomalyDetectionViewSet)
-router.register(r'notifications', views.NotificationViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -33,133 +33,94 @@ IoTLab is a robust IoT telemetry platform that includes:
 - Docker Desktop
 - Git
 
-## Installation
-
-### 1. Clone the Repository
+## Quick Start
 
 ```bash
+# 1. Clone + install deps
 git clone https://github.com/himcesjf/IoTLab.git
 cd IoTLab
-```
-
-### 2. Python Environment Setup
-
-Create and activate a virtual environment:
-
-```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
-```
 
-### 3. Docker Setup
-
-1. Ensure Docker Desktop is running
-2. Check for port conflicts:
-   - Mosquitto: 1883
-   - PostgreSQL/TimescaleDB: 5432
-   - Redis: 6379
-
-3. Start the services:
-```bash
+# 2. Start supporting services (TimescaleDB, Redis, Mosquitto)
 docker-compose up -d
-```
 
-To verify all services are running:
-```bash
-docker-compose ps
-```
-
-### 4. Environment Configuration
-
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-### 5. Database Setup
-
-```bash
+# 3. Configure + migrate
+cp env.example .env
 python manage.py migrate
+
+# 4. Seed and backfill sample data
+python manage.py seed_devices
+python manage.py generate_telemetry --days 1 --readings-per-day 24
+
+# 5. Run the app
+python manage.py run_mqtt_client   # optional: live ingestion
+python manage.py runserver         # dashboard/API at http://127.0.0.1:8000
 ```
 
-### 6. Run Development Server
+## Project Structure
 
-```bash
-python manage.py runserver
+```
+IoTLab/
+├─ manage.py                  # Django entry point (uses iotlab.ingest_api.core.settings)
+├─ docker-compose.yml         # TimescaleDB, Redis, Mosquitto services
+├─ iotlab/
+│  ├─ ingest_api/core/        # Django project (settings/urls/asgi/wsgi)
+│  ├─ ingest_api/devices/     # Device registry models + seed command
+│  ├─ ingest_api/telemetry/   # Telemetry/anomaly models + MQTT client
+│  ├─ ingest_api/api/         # API configuration (v1 router lives in /v1)
+│  ├─ dashboard/              # Views, templates, static assets for UI
+│  └─ device_simulator/       # Simulator CLI + device type definitions
+├─ v1/                        # DRF viewsets + routers
+└─ static/, etc.
 ```
 
 ## Accessing Services
 
 After starting all services, you can access them at:
 
-- **Django Development Server**: http://127.0.0.1:8000
-- **Django Admin Interface**: http://127.0.0.1:8000/admin
-- **API Documentation**: http://127.0.0.1:8000/api/docs
-- **Real-time Dashboard**: http://127.0.0.1:8000/dashboard
-- **Device Monitoring**: http://127.0.0.1:8000/devices
-- **Anomaly Detection**: http://127.0.0.1:8000/anomalies
-- **System Metrics**: http://127.0.0.1:8000/metrics
+- **Dashboard**: http://127.0.0.1:8000/
+- **Devices List**: http://127.0.0.1:8000/devices/
+- **Anomalies**: http://127.0.0.1:8000/anomalies/
+- **Metrics**: http://127.0.0.1:8000/metrics/
+- **API v1**: http://127.0.0.1:8000/api/v1/
+- **API Documentation**: http://127.0.0.1:8000/api/docs/
+- **Django Admin**: http://127.0.0.1:8000/admin/
 
 Other services:
 - **PostgreSQL/TimescaleDB**: Port 5432
 - **Redis**: Port 6379
 - **MQTT (Mosquitto)**: Port 1883
 
-## Running Device Simulators
+## Data Generation
 
-There are two ways to generate device data:
-
-### 1. Real-time Device Simulator
-
-This simulator creates live devices that publish data continuously over MQTT:
+### Real-time simulator (MQTT)
 
 ```bash
-# Spawn 10 simulated temperature sensors
-python -m telemetrix_lab.device_simulator.cli --device-type temperature --count 10 --frequency 5
-
-# Generate high-frequency vibration data with customized failure rate
-python -m telemetrix_lab.device_simulator.cli --device-type vibration --count 5 --frequency 10 --failure-rate 0.05
-
-# Create flow meters with specific noise factor
-python -m telemetrix_lab.device_simulator.cli --device-type flow --count 3 --frequency 30 --noise-factor 0.1
+python -m iotlab.device_simulator.cli \
+  --device-type temperature \
+  --count 10 \
+  --frequency 5 \
+  --failure-rate 0.02 \
+  --noise-factor 0.1
 ```
 
-Available options:
-- `--device-type`: temperature, vibration, or flow
-- `--count`: Number of devices to simulate
-- `--frequency`: Publishing frequency in seconds
-- `--failure-rate`: Device failure probability (0.0-1.0)
-- `--noise-factor`: Sensor noise factor (0.0-1.0)
-- `--mqtt-host`: MQTT broker host (default: localhost)
-- `--mqtt-port`: MQTT broker port (default: 1883)
+Flags: `--device-type` (`temperature|vibration|flow`), `--count`, `--frequency` (others available via `python -m iotlab.device_simulator.cli --help`).
 
-### 2. Sample Data Generation
+ (Simulator implementation lives under `iotlab/device_simulator/` — device types, MQTT engine, and CLI.)
 
-For testing purposes, you can also generate historical sample data using Django management commands:
+### Historical backfill
 
 ```bash
-# First, seed sample devices
 python manage.py seed_devices
-
-# Then generate historical telemetry data
 python manage.py generate_telemetry --days 7 --readings-per-day 96 --anomaly-probability 0.1
 ```
 
-Sample data options:
-- `--days`: Number of days of historical data to generate
-- `--readings-per-day`: Number of readings per day per device
-- `--anomaly-probability`: Probability of generating anomalies
-
-### Management command help
-
-Use Django's built-in help to discover available commands and options:
+### Command help
 
 ```bash
-# List all commands
 python manage.py help
-
-# Command-specific help and options
 python manage.py seed_devices --help
 python manage.py generate_telemetry --help
 python manage.py run_mqtt_client --help

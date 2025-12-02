@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: timescale/timescaledb:latest-pg14
@@ -7,7 +5,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=telemetrix
+      - POSTGRES_DB=iotlab
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

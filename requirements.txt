@@ -39,4 +39,8 @@ python-dotenv==1.0.1
 faker==22.4.0
 numpy==1.26.3
 pandas==2.1.4
-coreapi==2.3.3 
+
+# API docs support
+coreapi==2.3.3
+coreschema==0.0.4
+setuptools<81

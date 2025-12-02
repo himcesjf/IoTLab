@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from telemetrix_lab.ingest_api.devices.models import DeviceType, Device, DeviceConfig
-from telemetrix_lab.ingest_api.telemetry.models import Telemetry, AnomalyDetection, Notification
+from iotlab.ingest_api.devices.models import DeviceType, Device, DeviceConfig
+from iotlab.ingest_api.telemetry.models import Telemetry, AnomalyDetection
 
 
 class DeviceTypeSerializer(serializers.ModelSerializer):
@@ -56,14 +56,3 @@ class AnomalyDetectionSerializer(serializers.ModelSerializer):
                   'acknowledged']
         read_only_fields = ['id', 'telemetry', 'device', 'timestamp']
 
-
-class NotificationSerializer(serializers.ModelSerializer):
-    device_id = serializers.UUIDField(source='device.id', read_only=True)
-    device_name = serializers.CharField(source='device.name', read_only=True)
-    
-    class Meta:
-        model = Notification
-        fields = ['id', 'anomaly', 'device', 'device_id', 'device_name',
-                  'notification_type', 'recipient', 'subject', 'message',
-                  'status', 'created_at', 'sent_at']
-        read_only_fields = ['id', 'created_at', 'sent_at'] 

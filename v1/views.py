@@ -4,11 +4,11 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 
-from telemetrix_lab.ingest_api.devices.models import DeviceType, Device, DeviceConfig
-from telemetrix_lab.ingest_api.telemetry.models import Telemetry, AnomalyDetection, Notification
+from iotlab.ingest_api.devices.models import DeviceType, Device, DeviceConfig
+from iotlab.ingest_api.telemetry.models import Telemetry, AnomalyDetection
 from .serializers import (
     DeviceTypeSerializer, DeviceSerializer, DeviceConfigSerializer,
-    TelemetrySerializer, AnomalyDetectionSerializer, NotificationSerializer
+    TelemetrySerializer, AnomalyDetectionSerializer
 )
 
 
@@ -124,12 +124,3 @@ class AnomalyDetectionViewSet(viewsets.ModelViewSet):
         anomaly.save()
         return Response({'status': 'acknowledged'})
 
-
-class NotificationViewSet(viewsets.ModelViewSet):
-    queryset = Notification.objects.all()
-    serializer_class = NotificationSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['device', 'notification_type', 'status']
-    search_fields = ['subject', 'message', 'recipient']
-    ordering_fields = ['created_at', 'sent_at']
-    ordering = ['-created_at'] 

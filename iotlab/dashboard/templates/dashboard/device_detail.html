@@ -1,0 +1,120 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Device Detail · {{ device.name }}{% endblock %}
+{% block page_title %}Device · {{ device.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="card">
+        <h2 class="card-header">Device Overview</h2>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Device Name</dt>
+                <dd class="mt-1 text-lg text-gray-900">{{ device.name }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Type</dt>
+                <dd class="mt-1 text-lg text-gray-900">{{ device.device_type.name }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Status</dt>
+                <dd class="mt-1">
+                    <span class="badge {% if device.status == 'online' %}badge-success{% elif device.status == 'error' %}badge-error{% else %}badge-info{% endif %}">
+                        {{ device.status|capfirst }}
+                    </span>
+                </dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500">Last Seen</dt>
+                <dd class="mt-1 text-lg text-gray-900">
+                    {{ device.last_seen|default:"Not reported" }}
+                </dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="card">
+        <h2 class="card-header">Recent Telemetry (last {{ hours }} hours)</h2>
+        <div class="chart-container">
+            <canvas id="telemetryChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-header">Recent Anomalies</h2>
+        {% if anomalies %}
+            <div class="space-y-4">
+                {% for anomaly in anomalies %}
+                    <div class="flex items-center justify-between border rounded-lg px-4 py-3">
+                        <div>
+                            <p class="text-sm text-gray-500">{{ anomaly.timestamp }}</p>
+                            <p class="font-medium text-gray-900">{{ anomaly.description }}</p>
+                        </div>
+                        <span class="badge {% if anomaly.severity == 'critical' %}badge-error{% elif anomaly.severity == 'high' %}badge-warning{% else %}badge-info{% endif %}">
+                            {{ anomaly.severity|upper }}
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500">No anomalies detected for the selected period.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const timestamps = {{ timestamps|safe }};
+    const telemetry = {{ telemetry_data|safe }};
+    const fields = {{ fields|safe }};
+
+    const datasets = fields.map((field, index) => ({
+        label: field.replace('_', ' ').toUpperCase(),
+        data: telemetry[field],
+        borderColor: ['#0ea5e9', '#ea580c', '#16a34a'][index % 3],
+        backgroundColor: 'transparent',
+        tension: 0.3,
+    }));
+
+    new Chart(
+        document.getElementById('telemetryChart'),
+        {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                stacked: false,
+                plugins: {
+                    legend: {
+                        labels: { usePointStyle: true }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            tooltipFormat: 'HH:mm'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            callback: (value) => Number(value.toFixed ? value.toFixed(2) : value)
+                        }
+                    }
+                }
+            }
+        }
+    );
+});
+</script>
+{% endblock %}
+

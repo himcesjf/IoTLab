@@ -1,11 +1,3 @@
-"""
-WSGI config to expose the WSGI callable as a module-level variable named `application`.
-"""
+"""Compatibility WSGI module that proxies to the main project WSGI app."""
 
-import os
-
-from django.core.wsgi import get_wsgi_application
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
-
-application = get_wsgi_application() 
+from iotlab.ingest_api.core.wsgi import application  # noqa

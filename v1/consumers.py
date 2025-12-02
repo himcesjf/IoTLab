@@ -3,7 +3,7 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.core.serializers.json import DjangoJSONEncoder
 
-from telemetrix_lab.ingest_api.devices.models import Device
+from iotlab.ingest_api.devices.models import Device
 
 
 class TelemetryConsumer(AsyncJsonWebsocketConsumer):
