@@ -135,11 +135,11 @@ class MQTTClient:
             
             # Create anomaly record
             anomaly = AnomalyDetection.objects.create(
-                telemetry=telemetry,
                 device=device,
                 severity=severity,
                 description=description,
-                anomaly_data=anomaly_data
+                data=anomaly_data,
+                timestamp=telemetry.timestamp
             )
             
             # Broadcast anomaly to WebSocket
@@ -191,7 +191,7 @@ class MQTTClient:
                 'timestamp': anomaly.timestamp.isoformat(),
                 'severity': anomaly.severity,
                 'description': anomaly.description,
-                'data': anomaly.anomaly_data
+                'data': anomaly.data
             }
             
             # Broadcast to device-specific group

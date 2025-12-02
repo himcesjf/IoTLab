@@ -139,17 +139,31 @@ Available options:
 For testing purposes, you can also generate historical sample data using Django management commands:
 
 ```bash
-# First, create sample devices
-python manage.py create_sample_data
+# First, seed sample devices
+python manage.py seed_devices
 
 # Then generate historical telemetry data
-python manage.py generate_sample_data --days 7 --readings-per-day 96 --anomaly-probability 0.1
+python manage.py generate_telemetry --days 7 --readings-per-day 96 --anomaly-probability 0.1
 ```
 
 Sample data options:
 - `--days`: Number of days of historical data to generate
 - `--readings-per-day`: Number of readings per day per device
 - `--anomaly-probability`: Probability of generating anomalies
+
+### Management command help
+
+Use Django's built-in help to discover available commands and options:
+
+```bash
+# List all commands
+python manage.py help
+
+# Command-specific help and options
+python manage.py seed_devices --help
+python manage.py generate_telemetry --help
+python manage.py run_mqtt_client --help
+```
 
 ## API Reference
 

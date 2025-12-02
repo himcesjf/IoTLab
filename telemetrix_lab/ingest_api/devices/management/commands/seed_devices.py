@@ -3,7 +3,7 @@ from django.utils import timezone
 from telemetrix_lab.ingest_api.devices.models import DeviceType, Device
 
 class Command(BaseCommand):
-    help = 'Creates sample device types and devices for testing'
+    help = 'Seeds sample device types and devices for testing'
 
     def handle(self, *args, **kwargs):
         # Create sample device types
@@ -100,4 +100,5 @@ class Command(BaseCommand):
         self.stdout.write(f"Total Devices: {Device.objects.count()}")
         self.stdout.write(
             f"Online Devices: {Device.objects.filter(status='online').count()}"
-        ) 
+        )
+
